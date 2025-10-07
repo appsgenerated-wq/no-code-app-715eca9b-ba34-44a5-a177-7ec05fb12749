@@ -1,0 +1,147 @@
+name: FlavorFind
+
+entities:
+  User:
+    authenticable: true
+    properties:
+      - name: name
+        type: string
+        validations:
+          - { rule: required }
+      - name: email
+        type: email
+        validations:
+          - { rule: required }
+          - { rule: unique }
+      - name: role
+        type: choice
+        options:
+          values: [admin, chef]
+        default: chef
+    policies:
+      create:
+        - access: admin
+      read:
+        - access: admin
+        - access: restricted
+          allow: User
+          condition: self
+      update:
+        - access: admin
+        - access: restricted
+          allow: User
+          condition: self
+      delete:
+        - access: admin
+      signup:
+        - access: public
+
+  Recipe:
+    properties:
+      - name: title
+        type: string
+        validations:
+          - { rule: required }
+      - name: description
+        type: richText
+      - name: photo
+        type: image
+        options:
+          sizes:
+            thumbnail:
+              width: 400
+              height: 400
+            large:
+              width: 1024
+              height: 768
+      - name: prepTime
+        type: number
+        helpText: 'Preparation time in minutes'
+      - name: cookTime
+        type: number
+        helpText: 'Cooking time in minutes'
+      - name: servings
+        type: number
+      - name: difficulty
+        type: choice
+        options:
+          values: [Easy, Medium, Hard]
+        default: Medium
+    belongsTo:
+      - { name: chef, entity: User }
+    belongsToMany:
+      - Ingredient
+    policies:
+      create:
+        - access: restricted
+          allow: User
+      read:
+        - access: public
+      update:
+        - access: admin
+        - access: restricted
+          allow: User
+          condition: self
+      delete:
+        - access: admin
+        - access: restricted
+          allow: User
+          condition: self
+
+  Ingredient:
+    properties:
+      - name: name
+        type: string
+        validations:
+          - { rule: required }
+          - { rule: unique }
+      - name: category
+        type: choice
+        options:
+          values: [Produce, Dairy, Meat, Seafood, Pantry, Spices, Bakery]
+        default: Pantry
+    policies:
+      create:
+        - access: admin
+      read:
+        - access: public
+      update:
+        - access: admin
+      delete:
+        - access: admin
+
+  Review:
+    properties:
+      - name: rating
+        type: number
+        validations:
+          - { rule: required }
+          - { rule: 'in', values: [1, 2, 3, 4, 5] }
+      - name: comment
+        type: text
+    belongsTo:
+      - { name: author, entity: User }
+      - Recipe
+    policies:
+      create:
+        - access: restricted
+          allow: User
+      read:
+        - access: public
+      update:
+        - access: restricted
+          allow: User
+          condition: self
+      delete:
+        - access: restricted
+          allow: User
+          condition: self
+
+
+# Health check endpoint for connection testing
+endpoints:
+  health:
+    path: /api/health
+    method: GET
+    policies: []
+    handler: healthCheck
